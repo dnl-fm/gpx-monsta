@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPX Monster - Browser GPX Processor</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Left Panel - File Management & Controls -->
+        <div class="left-panel">
+            <!-- File List -->
+            <div class="file-list-container">
+                <input type="file" id="fileInput" multiple accept=".gpx" hidden>
+                <div class="file-list" id="fileList">
+                    <div class="empty-state" id="emptyState">
+                        <p>Drop GPX files here or <span class="browse-link" id="browseLink">browse files</span></p>
+                        <p class="small-text">Your tracks will appear on the map</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Progress Section -->
+            <div class="progress-section" id="progressSection" style="display: none;">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <p id="progressText"></p>
+            </div>
+            
+            <!-- Download Results -->
+            <div class="results-section" id="resultsSection" style="display: none;">
+                <div id="downloadButtons"></div>
+            </div>
+            
+            <!-- Controls Section -->
+            <div class="controls-panel" id="controlsPanel" style="display: none;">
+                <div class="action-buttons">
+                    <button id="clearBtn" class="action-btn">Clear All</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Panel - Map -->
+        <div class="right-panel">
+            <div class="map-container">
+                <div id="map" class="route-map"></div>
+                <div class="map-overlay" id="mapOverlay">
+                    <div class="overlay-content">
+                        <h3>Your GPX tracks will appear here</h3>
+                        <p>Upload files using the panel on the left</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script type="module" src="main.js"></script>
+</body>
+</html>
