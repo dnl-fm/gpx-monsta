@@ -91,6 +91,36 @@ body {
     font-size: 0.9rem;
 }
 
+/* Add More Files Section */
+.add-more-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    margin-bottom: 8px;
+    border: 2px dashed #d1d5db;
+    border-radius: 8px;
+    background: #f9fafb;
+    text-align: center;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.add-more-item:hover {
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+
+.add-more-content {
+    opacity: 0.8;
+}
+
+.add-more-text {
+    margin: 0 0 4px 0;
+    font-size: 0.9rem;
+    color: #374151;
+}
+
 /* Controls Panel */
 .controls-panel {
     padding: 8px 24px 24px 24px;
@@ -657,6 +687,11 @@ input:checked ~ .unit-labels .imperial {
     
     .unit-toggle {
         align-self: flex-end;
+    }
+    
+    .add-more-item {
+        padding: 12px;
+        margin-bottom: 6px;
     }
     
     .empty-state {

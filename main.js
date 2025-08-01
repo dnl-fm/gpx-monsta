@@ -182,8 +182,8 @@ class GPXMonsterApp {
     }
 
     updateFileList() {
-        // Clear existing file items (but keep empty state)
-        const existingItems = this.fileList.querySelectorAll('.file-item');
+        // Clear existing file items and add-more items (but keep empty state)
+        const existingItems = this.fileList.querySelectorAll('.file-item, .add-more-item');
         existingItems.forEach(item => item.remove());
         
         // Show/hide empty state and controls
@@ -214,6 +214,31 @@ class GPXMonsterApp {
             
             this.fileList.appendChild(fileItem);
         });
+
+        // Add "Add More Files" item after all file items
+        this.createAddMoreItem();
+    }
+
+    createAddMoreItem() {
+        const addMoreItem = document.createElement('div');
+        addMoreItem.className = 'add-more-item';
+        
+        addMoreItem.innerHTML = `
+            <div class="add-more-content">
+                <p class="add-more-text">Add more GPX files or <span class="browse-link">browse files</span></p>
+                <p class="small-text">Additional tracks will be merged with existing ones</p>
+            </div>
+        `;
+        
+        // Add click event to the entire item and the browse link
+        addMoreItem.addEventListener('click', () => this.fileInput.click());
+        const browseLink = addMoreItem.querySelector('.browse-link');
+        browseLink.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent double firing
+            this.fileInput.click();
+        });
+        
+        this.fileList.appendChild(addMoreItem);
     }
 
     removeFile(index) {
