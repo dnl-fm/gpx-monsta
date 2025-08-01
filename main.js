@@ -6,6 +6,8 @@ class GPXMonsterApp {
         this.processor = null;
         this.isImperial = false;
         this.currentStats = null;
+        this.sortingInfo = null;
+        this.fileTimestampInfo = null;
         this.initializeElements();
         this.setupEventListeners();
         this.initializeProcessor();
@@ -260,8 +262,8 @@ class GPXMonsterApp {
     }
 
     updateFileList() {
-        // Clear existing file items and add-more items (but keep empty state)
-        const existingItems = this.fileList.querySelectorAll('.file-item, .add-more-item');
+        // Clear existing file items, add-more items, and timestamp notifications (but keep empty state)
+        const existingItems = this.fileList.querySelectorAll('.file-item, .add-more-item, .timestamp-notification');
         existingItems.forEach(item => item.remove());
         
         // Show/hide empty state and controls
@@ -274,17 +276,63 @@ class GPXMonsterApp {
             this.controlsPanel.style.display = 'block';
         }
 
+        // Add notification before files if sorting was applied
+        if (this.sortingInfo && this.files.length > 0) {
+            const notification = document.createElement('div');
+            notification.className = 'timestamp-notification';
+            
+            let message = '';
+            let icon = '';
+            
+            if (this.sortingInfo.type === 'chronological') {
+                message = 'Sorted chronologically by timestamps';
+                icon = `<svg class="notification-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12,6 12,12 16,14"></polyline>
+                </svg>`;
+            } else if (this.sortingInfo.hasMixedTimestamps) {
+                message = 'Not all files have timestamps - sorted by filename. You can reorder files manually by dragging.';
+                icon = `<svg class="notification-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 9v3l2 2"></path>
+                    <path d="M12 21a9 9 0 1 1 0-18c2.52 0 4.93 1 6.74 2.74L21 8"></path>
+                    <path d="M21 3v5h-5"></path>
+                </svg>`;
+                notification.classList.add('warning');
+            }
+            
+            if (message) {
+                notification.innerHTML = `
+                    <div class="notification-content">
+                        ${icon}
+                        <span>${message}</span>
+                    </div>
+                `;
+                this.fileList.appendChild(notification);
+            }
+        }
+
         this.files.forEach((file, index) => {
             const fileItem = document.createElement('div');
             fileItem.className = 'file-item';
             fileItem.draggable = true;
             fileItem.dataset.index = index;
             
+            // Check if this file has timestamps
+            const hasTimestamps = this.fileTimestampInfo && this.fileTimestampInfo[file.name];
+            const timestampIndicator = hasTimestamps ? 
+                `<span class="timestamp-indicator">
+                    <svg class="timestamp-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12,6 12,12 16,14"></polyline>
+                    </svg>
+                    <span class="timestamp-label">has timestamp</span>
+                </span>` : '';
+            
             fileItem.innerHTML = `
                 <div class="drag-handle">⋮⋮</div>
                 <div class="file-info">
                     <div class="file-name">${file.name}</div>
-                    <div class="file-size">${this.formatFileSize(file.size)}</div>
+                    <div class="file-size">${this.formatFileSize(file.size)} ${timestampIndicator}</div>
                 </div>
                 <button class="file-remove">×</button>
             `;
@@ -367,7 +415,7 @@ class GPXMonsterApp {
         this.hideResults();
 
         try {
-            const { results, outputs, coordinates, stats } = await this.processor.processFiles(
+            const { results, outputs, coordinates, stats, sortingInfo, fileOrder, fileTimestampInfo } = await this.processor.processFiles(
                 this.files,
                 'merge',
                 [],
@@ -377,7 +425,7 @@ class GPXMonsterApp {
             );
 
             this.hideProgress();
-            this.showResults(results, outputs, coordinates, stats);
+            this.showResults(results, outputs, coordinates, stats, sortingInfo, fileOrder, fileTimestampInfo);
 
         } catch (error) {
             this.hideProgress();
@@ -402,7 +450,33 @@ class GPXMonsterApp {
         }
     }
 
-    showResults(_results, outputs, coordinates = [], stats = null) {
+    showResults(_results, outputs, coordinates = [], stats = null, sortingInfo = null, fileOrder = null, fileTimestampInfo = null) {
+        // Reorder files if chronological sorting was used
+        if (sortingInfo && sortingInfo.type === 'chronological' && fileOrder && fileOrder.length > 0) {
+            const originalFiles = [...this.files];
+            this.files = [];
+            
+            // Add files in chronological order
+            for (const fileName of fileOrder) {
+                const file = originalFiles.find(f => f.name === fileName);
+                if (file) {
+                    this.files.push(file);
+                }
+            }
+            
+            // Add any remaining files that weren't in the chronological order
+            for (const file of originalFiles) {
+                if (!this.files.includes(file)) {
+                    this.files.push(file);
+                }
+            }
+        }
+        
+        // Set notification info and timestamp info, then update file list
+        this.sortingInfo = sortingInfo;
+        this.fileTimestampInfo = fileTimestampInfo;
+        this.updateFileList();
+
         // Show statistics if available
         if (stats) {
             this.currentStats = stats; // Store stats for unit conversion
@@ -520,6 +594,8 @@ class GPXMonsterApp {
     hideResults() {
         this.resultsSection.style.display = 'none';
         this.statsSection.style.display = 'none';
+        this.sortingInfo = null;
+        this.fileTimestampInfo = null;
         this.currentStats = null; // Clear stored stats
         this.mapOverlay.style.display = 'flex';
         

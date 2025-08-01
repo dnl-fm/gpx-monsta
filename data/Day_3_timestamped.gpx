@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd" creator="GPX Monster Test" version="1.1" xmlns="http://www.topografix.com/GPX/1/1">
+ <trk>
+  <name>Test Day 3 with Timestamps</name>
+  <type>cycling</type>
+  <trkseg>
+   <trkpt lat="46.7050000" lon="11.6500000">
+    <ele>590.0</ele>
+    <time>2024-08-01T11:00:00Z</time>
+   </trkpt>
+   <trkpt lat="46.7045000" lon="11.6495000">
+    <ele>589.5</ele>
+    <time>2024-08-01T11:15:00Z</time>
+   </trkpt>
+   <trkpt lat="46.7040000" lon="11.6490000">
+    <ele>589.0</ele>
+    <time>2024-08-01T11:30:00Z</time>
+   </trkpt>
+   <trkpt lat="46.7035000" lon="11.6485000">
+    <ele>588.5</ele>
+    <time>2024-08-01T11:45:00Z</time>
+   </trkpt>
+   <trkpt lat="46.7030000" lon="11.6480000">
+    <ele>588.0</ele>
+    <time>2024-08-01T12:00:00Z</time>
+   </trkpt>
+  </trkseg>
+ </trk>
+</gpx>

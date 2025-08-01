@@ -241,7 +241,7 @@ export class GPXProcessor {
     return points;
   }
 
-  generateGPX(points) {
+  generateGPX(points, hasTimestamps = false) {
     const header = `<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="GPX Merger" xmlns="http://www.topografix.com/GPX/1/1">
   <metadata>
@@ -352,7 +352,13 @@ ${trackPoints}
           });
           this.log(`  Normalized file prepared: ${normalizedOutput}`);
         } else {
-          allPoints.push(...points);
+          // Add file index and point index for sorting fallback
+          const pointsWithIndex = points.map((point, pointIndex) => ({
+            ...point,
+            fileIndex: i,
+            pointIndex: pointIndex
+          }));
+          allPoints.push(...pointsWithIndex);
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
@@ -374,7 +380,30 @@ ${trackPoints}
       this.log(`\nTotal files processed: ${filesToProcess.length}`);
       this.log(`Total points found: ${allPoints.length}`);
 
-      const mergedGPX = this.generateGPX(allPoints);
+      // Check if ALL points have timestamps (not just some)
+      const allHaveTimestamps = allPoints.length > 0 && allPoints.every(point => point.time);
+      const someHaveTimestamps = allPoints.some(point => point.time);
+      
+      if (allHaveTimestamps) {
+        this.log(`\nAll tracks have timestamps - sorting chronologically...`);
+        // Sort all points chronologically by timestamp
+        allPoints.sort((a, b) => {
+          return new Date(a.time).getTime() - new Date(b.time).getTime();
+        });
+      } else if (someHaveTimestamps) {
+        this.log(`\nMixed timestamps detected - falling back to filename order...`);
+        // Some files have timestamps, some don't - use filename order for consistency
+        allPoints.sort((a, b) => {
+          if (a.fileIndex !== b.fileIndex) {
+            return a.fileIndex - b.fileIndex;
+          }
+          return a.pointIndex - b.pointIndex;
+        });
+      } else {
+        this.log(`\nNo timestamps found - maintaining filename order...`);
+      }
+
+      const mergedGPX = this.generateGPX(allPoints, allHaveTimestamps);
       outputs.push({
         name: 'merged.gpx',
         content: mergedGPX
@@ -408,7 +437,61 @@ ${trackPoints}
       this.log(`  Total Points: ${stats.totalPoints}`);
     }
 
-    return { results, outputs, coordinates, stats };
+    // Calculate file order and sorting type
+    let fileOrder = null;
+    let sortingInfo = { type: 'filename', hasAllTimestamps: false, hasMixedTimestamps: false };
+    
+    if (mode === 'merge') {
+      const allHaveTimestamps = allPoints.length > 0 && allPoints.every(point => point.time);
+      const someHaveTimestamps = allPoints.some(point => point.time);
+      
+      if (allHaveTimestamps) {
+        // All files have timestamps - calculate chronological order
+        const fileTimestamps = new Map();
+        for (const point of allPoints) {
+          if (point.time && point.sourceFile && !fileTimestamps.has(point.sourceFile)) {
+            fileTimestamps.set(point.sourceFile, new Date(point.time).getTime());
+          }
+        }
+        
+        fileOrder = Array.from(fileTimestamps.entries())
+          .sort(([,timeA], [,timeB]) => timeA - timeB)
+          .map(([fileName]) => fileName);
+          
+        sortingInfo = { type: 'chronological', hasAllTimestamps: true, hasMixedTimestamps: false };
+      } else if (someHaveTimestamps) {
+        // Mixed timestamps - fallback to filename order
+        sortingInfo = { type: 'filename', hasAllTimestamps: false, hasMixedTimestamps: true };
+      } else {
+        // No timestamps
+        sortingInfo = { type: 'filename', hasAllTimestamps: false, hasMixedTimestamps: false };
+      }
+    }
+
+    // Build file timestamp info for UI
+    const fileTimestampInfo = {};
+    if (mode === 'merge') {
+      for (const result of results) {
+        fileTimestampInfo[result.fileName] = false; // Default to no timestamps
+      }
+      
+      // Check which files have timestamps
+      for (const point of allPoints) {
+        if (point.time && point.sourceFile) {
+          fileTimestampInfo[point.sourceFile] = true;
+        }
+      }
+    }
+
+    return { 
+      results, 
+      outputs, 
+      coordinates, 
+      stats,
+      sortingInfo,
+      fileOrder,
+      fileTimestampInfo
+    };
   }
 
   readFileAsText(file) {
