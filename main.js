@@ -135,6 +135,72 @@ class GPXMonsterApp {
         this.unitToggle.checked = this.isImperial;
     }
 
+    // Sort files by day number to ensure consistent processing order
+    sortFilesByDay() {
+        this.files.sort((a, b) => {
+            const dayA = parseInt(a.name.match(/Day_?(\d+)/)?.[1] || '0');
+            const dayB = parseInt(b.name.match(/Day_?(\d+)/)?.[1] || '0');
+            return dayA - dayB;
+        });
+    }
+
+    // Setup drag and drop events for file items
+    setupFileDragEvents(fileItem, index) {
+        fileItem.addEventListener('dragstart', (e) => {
+            console.log('Drag start:', index);
+            e.dataTransfer.setData('text/plain', index.toString());
+            fileItem.classList.add('dragging');
+        });
+
+        fileItem.addEventListener('dragend', () => {
+            fileItem.classList.remove('dragging');
+            // Remove drag-over class from all items
+            document.querySelectorAll('.file-item').forEach(item => {
+                item.classList.remove('drag-over');
+            });
+        });
+
+        fileItem.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileItem.classList.add('drag-over');
+        });
+
+        fileItem.addEventListener('dragleave', (e) => {
+            if (!fileItem.contains(e.relatedTarget)) {
+                fileItem.classList.remove('drag-over');
+            }
+        });
+
+        fileItem.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation(); // Prevent bubbling to parent drag handlers
+            
+            const draggedIndex = parseInt(e.dataTransfer.getData('text/plain'));
+            const targetIndex = parseInt(fileItem.dataset.index);
+            
+            console.log('Drop event:', draggedIndex, '->', targetIndex);
+            
+            if (draggedIndex !== targetIndex) {
+                this.reorderFiles(draggedIndex, targetIndex);
+            }
+            
+            fileItem.classList.remove('drag-over');
+        });
+    }
+
+    // Reorder files array and update UI
+    reorderFiles(fromIndex, toIndex) {
+        // Move the file in the array
+        const [movedFile] = this.files.splice(fromIndex, 1);
+        this.files.splice(toIndex, 0, movedFile);
+        
+        // Update the file list display
+        this.updateFileList();
+        
+        // Reprocess the route with new order
+        this.autoProcessFiles();
+    }
+
     saveUnitPreference() {
         localStorage.setItem('gpx-monster-units', this.isImperial ? 'imperial' : 'metric');
     }
@@ -154,6 +220,15 @@ class GPXMonsterApp {
     handleDrop(e) {
         e.preventDefault();
         this.mapContainer.classList.remove('map-dragover');
+        
+        // Check if this is an internal file reordering operation
+        const draggedIndex = e.dataTransfer.getData('text/plain');
+        if (draggedIndex !== '') {
+            // This is an internal drag operation, don't handle as file drop
+            return;
+        }
+        
+        // Handle external file drops
         const files = Array.from(e.dataTransfer.files).filter(file => 
             file.name.toLowerCase().endsWith('.gpx')
         );
@@ -177,6 +252,9 @@ class GPXMonsterApp {
             }
         });
 
+        // Sort files by day number to ensure consistent chronological order
+        this.sortFilesByDay();
+
         this.updateFileList();
         this.autoProcessFiles();
     }
@@ -199,14 +277,20 @@ class GPXMonsterApp {
         this.files.forEach((file, index) => {
             const fileItem = document.createElement('div');
             fileItem.className = 'file-item';
+            fileItem.draggable = true;
+            fileItem.dataset.index = index;
             
             fileItem.innerHTML = `
+                <div class="drag-handle">⋮⋮</div>
                 <div class="file-info">
                     <div class="file-name">${file.name}</div>
                     <div class="file-size">${this.formatFileSize(file.size)}</div>
                 </div>
                 <button class="file-remove">×</button>
             `;
+            
+            // Add drag and drop event listeners
+            this.setupFileDragEvents(fileItem, index);
             
             // Add event listener to remove button
             const removeBtn = fileItem.querySelector('.file-remove');
@@ -413,14 +497,14 @@ class GPXMonsterApp {
             const endPoint = coordinates[coordinates.length - 1];
             
             // Start marker
-            const startMarker = new maplibregl.Marker({ color: '#22c55e' })
+            new maplibregl.Marker({ color: '#22c55e' })
                 .setLngLat([startPoint[1], startPoint[0]])
                 .setPopup(new maplibregl.Popup().setText('Start'))
                 .addTo(this.map);
                 
             // End marker (if different from start)
             if (coordinates.length > 1) {
-                const endMarker = new maplibregl.Marker({ color: '#ef4444' })
+                new maplibregl.Marker({ color: '#ef4444' })
                     .setLngLat([endPoint[1], endPoint[0]])
                     .setPopup(new maplibregl.Popup().setText('End'))
                     .addTo(this.map);

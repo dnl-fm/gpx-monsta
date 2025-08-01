@@ -300,6 +300,7 @@ body {
     border-radius: 12px;
     margin-bottom: 12px;
     transition: all 0.2s ease;
+    cursor: grab;
 }
 
 .file-item:hover {
@@ -307,6 +308,36 @@ body {
     background: #f1f5f9;
     transform: translateY(-1px);
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.file-item.dragging {
+    opacity: 0.5;
+    transform: rotate(3deg);
+    cursor: grabbing;
+}
+
+.file-item.drag-over {
+    border-color: #3b82f6;
+    background: #dbeafe;
+    transform: translateY(-2px);
+}
+
+.drag-handle {
+    color: #9ca3af;
+    font-size: 12px;
+    line-height: 1;
+    margin-right: 12px;
+    cursor: grab;
+    user-select: none;
+    transition: color 0.2s ease;
+}
+
+.file-item:hover .drag-handle {
+    color: #6b7280;
+}
+
+.file-item.dragging .drag-handle {
+    cursor: grabbing;
 }
 
 .file-info {

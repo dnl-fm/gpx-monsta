@@ -26,6 +26,81 @@ export class GPXProcessor {
     return degrees * (Math.PI/180);
   }
 
+  // Get coordinates in the same order as they appear in the generated GPX
+  getOrderedCoordinates(points) {
+    // Group points by source file and sort files by day number
+    const fileGroups = new Map();
+    for (const point of points) {
+      const file = point.sourceFile || 'unknown';
+      if (!fileGroups.has(file)) {
+        fileGroups.set(file, []);
+      }
+      fileGroups.get(file).push(point);
+    }
+
+    // Sort files by day number (Day_1, Day_2, etc.)
+    const sortedFiles = Array.from(fileGroups.entries()).sort(([a], [b]) => {
+      const dayA = parseInt(a.match(/Day_?(\d+)/)?.[1] || '0');
+      const dayB = parseInt(b.match(/Day_?(\d+)/)?.[1] || '0');
+      return dayA - dayB;
+    });
+
+    // Apply the same sorting logic as generateGPX
+    const allFilePoints = sortedFiles.flatMap(([fileName, filePoints], fileIndex) => 
+      filePoints.map((point, pointIndex) => ({
+        ...point,
+        fileIndex,
+        pointIndex
+      }))
+    );
+    
+    allFilePoints.sort((a, b) => {
+      if (a.time && b.time) {
+        return new Date(a.time).getTime() - new Date(b.time).getTime();
+      } else {
+        if (a.fileIndex !== b.fileIndex) {
+          return a.fileIndex - b.fileIndex;
+        }
+        return a.pointIndex - b.pointIndex;
+      }
+    });
+
+    return allFilePoints.map(point => [point.lat, point.lon]);
+  }
+
+  // Get coordinates grouped by track segments to prevent cross-day connections
+  getOrderedCoordinateSegments(points) {
+    // Group points by source file and sort files by day number
+    const fileGroups = new Map();
+    for (const point of points) {
+      const file = point.sourceFile || 'unknown';
+      if (!fileGroups.has(file)) {
+        fileGroups.set(file, []);
+      }
+      fileGroups.get(file).push(point);
+    }
+
+    // Sort files by day number (Day_1, Day_2, etc.)
+    const sortedFiles = Array.from(fileGroups.entries()).sort(([a], [b]) => {
+      const dayA = parseInt(a.match(/Day_?(\d+)/)?.[1] || '0');
+      const dayB = parseInt(b.match(/Day_?(\d+)/)?.[1] || '0');
+      return dayA - dayB;
+    });
+
+    // Return array of coordinate arrays, one per file/day
+    return sortedFiles.map(([fileName, filePoints]) => {
+      // Sort points within each file
+      filePoints.sort((a, b) => {
+        if (a.time && b.time) {
+          return new Date(a.time).getTime() - new Date(b.time).getTime();
+        }
+        return 0; // Preserve order if no timestamps
+      });
+      
+      return filePoints.map(point => [point.lat, point.lon]);
+    });
+  }
+
   // Calculate route statistics (distance, elevation gain/loss)
   calculateRouteStats(points) {
     if (!points || points.length < 2) {
@@ -175,33 +250,8 @@ export class GPXProcessor {
     <time>${new Date().toISOString()}</time>
   </metadata>`;
 
-    // Group points by source file and sort files by day number
-    const fileGroups = new Map();
-    for (const point of points) {
-      const file = point.sourceFile || 'unknown';
-      if (!fileGroups.has(file)) {
-        fileGroups.set(file, []);
-      }
-      fileGroups.get(file).push(point);
-    }
-
-    // Sort files by day number (Day_1, Day_2, etc.)
-    const sortedFiles = Array.from(fileGroups.entries()).sort(([a], [b]) => {
-      const dayA = parseInt(a.match(/Day_?(\d+)/)?.[1] || '0');
-      const dayB = parseInt(b.match(/Day_?(\d+)/)?.[1] || '0');
-      return dayA - dayB;
-    });
-
-    // Create one track with a single segment containing all points chronologically
-    const allFilePoints = sortedFiles.flatMap(([fileName, filePoints]) => filePoints);
-    
-    // Sort all points chronologically across all days
-    allFilePoints.sort((a, b) => {
-      if (!a.time || !b.time) return 0;
-      return new Date(a.time).getTime() - new Date(b.time).getTime();
-    });
-    
-    const trackPoints = allFilePoints.map(point => {
+    // Since files are pre-sorted, create a simple single track with all points in order
+    const trackPoints = points.map(point => {
       let trkpt = `      <trkpt lat="${point.lat}" lon="${point.lon}">`;
       if (point.ele !== undefined) trkpt += `\n        <ele>${point.ele}</ele>`;
       if (point.time) trkpt += `\n        <time>${point.time}</time>`;
@@ -336,6 +386,7 @@ ${trackPoints}
     }
 
     // For merge mode, also return coordinates for mapping and calculate statistics
+    // Since files are now pre-sorted, we can use allPoints directly
     const coordinates = mode === 'merge' && allPoints.length > 0 
       ? allPoints.map(point => [point.lat, point.lon])
       : [];
