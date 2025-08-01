@@ -9,6 +9,81 @@ export class GPXProcessor {
     }
   }
 
+  // Calculate distance between two points using Haversine formula
+  calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = this.toRadians(lat2 - lat1);
+    const dLon = this.toRadians(lon2 - lon1);
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(this.toRadians(lat1)) * Math.cos(this.toRadians(lat2)) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  }
+
+  toRadians(degrees) {
+    return degrees * (Math.PI/180);
+  }
+
+  // Calculate route statistics (distance, elevation gain/loss)
+  calculateRouteStats(points) {
+    if (!points || points.length < 2) {
+      return {
+        totalDistance: 0,
+        elevationGain: 0,
+        elevationLoss: 0,
+        minElevation: null,
+        maxElevation: null,
+        totalPoints: points ? points.length : 0
+      };
+    }
+
+    let totalDistance = 0;
+    let elevationGain = 0;
+    let elevationLoss = 0;
+    let minElevation = null;
+    let maxElevation = null;
+    
+    // Track valid elevation points
+    const elevationPoints = points.filter(p => p.ele !== undefined && !isNaN(p.ele));
+    
+    if (elevationPoints.length > 0) {
+      minElevation = Math.min(...elevationPoints.map(p => p.ele));
+      maxElevation = Math.max(...elevationPoints.map(p => p.ele));
+    }
+
+    // Calculate distance and elevation changes
+    for (let i = 1; i < points.length; i++) {
+      const prev = points[i - 1];
+      const curr = points[i];
+      
+      // Calculate distance
+      const distance = this.calculateDistance(prev.lat, prev.lon, curr.lat, curr.lon);
+      totalDistance += distance;
+      
+      // Calculate elevation changes
+      if (prev.ele !== undefined && curr.ele !== undefined && 
+          !isNaN(prev.ele) && !isNaN(curr.ele)) {
+        const elevationChange = curr.ele - prev.ele;
+        if (elevationChange > 0) {
+          elevationGain += elevationChange;
+        } else {
+          elevationLoss += Math.abs(elevationChange);
+        }
+      }
+    }
+
+    return {
+      totalDistance: Math.round(totalDistance * 100) / 100, // Round to 2 decimal places
+      elevationGain: Math.round(elevationGain),
+      elevationLoss: Math.round(elevationLoss),
+      minElevation: minElevation ? Math.round(minElevation) : null,
+      maxElevation: maxElevation ? Math.round(maxElevation) : null,
+      totalPoints: points.length
+    };
+  }
+
   normalizeGPXData(xmlContent, fileName) {
     const points = [];
     
@@ -260,12 +335,29 @@ ${trackPoints}
       this.log(`\nNormalized ${filesToProcess.length} files individually`);
     }
 
-    // For merge mode, also return coordinates for mapping
+    // For merge mode, also return coordinates for mapping and calculate statistics
     const coordinates = mode === 'merge' && allPoints.length > 0 
       ? allPoints.map(point => [point.lat, point.lon])
       : [];
+    
+    // Calculate route statistics
+    const stats = mode === 'merge' && allPoints.length > 0 
+      ? this.calculateRouteStats(allPoints)
+      : null;
 
-    return { results, outputs, coordinates };
+
+    if (stats) {
+      this.log(`\nRoute Statistics:`);
+      this.log(`  Total Distance: ${stats.totalDistance} km`);
+      this.log(`  Elevation Gain: ${stats.elevationGain} m`);
+      this.log(`  Elevation Loss: ${stats.elevationLoss} m`);
+      if (stats.minElevation !== null && stats.maxElevation !== null) {
+        this.log(`  Elevation Range: ${stats.minElevation}m - ${stats.maxElevation}m`);
+      }
+      this.log(`  Total Points: ${stats.totalPoints}`);
+    }
+
+    return { results, outputs, coordinates, stats };
   }
 
   readFileAsText(file) {

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GPX Monster - Browser GPX Processor</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.0.0/dist/maplibre-gl.css" />
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -30,6 +30,41 @@
                 <p id="progressText"></p>
             </div>
             
+            <!-- Route Statistics -->
+            <div class="stats-section" id="statsSection" style="display: none;">
+                <div class="stats-header">
+                    <h4>Route Statistics</h4>
+                    <div class="unit-toggle">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="unitToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span class="unit-labels">
+                            <span class="unit-label metric">Metric</span>
+                            <span class="unit-label imperial">Imperial</span>
+                        </span>
+                    </div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-label">Distance</span>
+                        <span class="stat-value" id="statDistance">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Elevation Gain</span>
+                        <span class="stat-value" id="statElevationGain">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Elevation Loss</span>
+                        <span class="stat-value" id="statElevationLoss">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Elevation Range</span>
+                        <span class="stat-value" id="statElevationRange">-</span>
+                    </div>
+                </div>
+            </div>
+
             <!-- Download Results -->
             <div class="results-section" id="resultsSection" style="display: none;">
                 <div id="downloadButtons"></div>
@@ -57,7 +92,7 @@
         </div>
     </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/maplibre-gl@4.0.0/dist/maplibre-gl.js"></script>
     <script type="module" src="main.js"></script>
 </body>
 </html>
