@@ -149,7 +149,6 @@ class GPXMonsterApp {
     // Setup drag and drop events for file items
     setupFileDragEvents(fileItem, index) {
         fileItem.addEventListener('dragstart', (e) => {
-            console.log('Drag start:', index);
             e.dataTransfer.setData('text/plain', index.toString());
             fileItem.classList.add('dragging');
         });
@@ -180,7 +179,6 @@ class GPXMonsterApp {
             const draggedIndex = parseInt(e.dataTransfer.getData('text/plain'));
             const targetIndex = parseInt(fileItem.dataset.index);
             
-            console.log('Drop event:', draggedIndex, '->', targetIndex);
             
             if (draggedIndex !== targetIndex) {
                 this.reorderFiles(draggedIndex, targetIndex);
