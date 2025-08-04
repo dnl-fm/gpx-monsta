@@ -1,0 +1,49 @@
+{
+  "name": "gpx-monster",
+  "version": "1.0.0",
+  "description": "Browser-based GPX file processor for merging and normalizing GPS tracks",
+  "author": "GPX Monster",
+  "license": "MIT",
+  "exports": "./main.ts",
+  "tasks": {
+    "dev": "deno run --allow-net --allow-read --allow-env --watch main.ts",
+    "start": "deno run --allow-net --allow-read --allow-env main.ts",
+    "test": "deno test --allow-read --allow-net tests/",
+    "test:watch": "deno test --allow-read --allow-net --watch tests/",
+    "check": "deno check main.ts",
+    "fmt": "deno fmt",
+    "lint": "deno lint"
+  },
+  "imports": {
+    "@std/http": "jsr:@std/http@^1.0.0",
+    "@std/assert": "jsr:@std/assert@^1.0.0"
+  },
+  "exclude": [
+    "data/",
+    "node_modules/",
+    ".git/"
+  ],
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "dom.asynciterable", "deno.ns"],
+    "strict": true
+  },
+  "deploy": {
+    "project": "gpx-monster",
+    "entrypoint": "main.ts",
+    "include": [
+      "main.ts",
+      "index.html",
+      "main.js",
+      "gpx-processor.js", 
+      "styles.css"
+    ],
+    "exclude": [
+      "data/",
+      "tests/",
+      "README.md",
+      "CLAUDE.md",
+      "todo.md",
+      "tsconfig.json"
+    ]
+  }
+}

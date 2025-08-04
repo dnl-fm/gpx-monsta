@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,8 +8,9 @@
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.0.0/dist/maplibre-gl.css" />
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
-    <div class="app-container">
+    <div class="app-container with-topbar">
         <!-- Left Panel - File Management & Controls -->
         <div class="left-panel">
             <!-- File List -->
@@ -21,7 +23,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Progress Section -->
             <div class="progress-section" id="progressSection" style="display: none;">
                 <div class="progress-bar">
@@ -29,7 +31,7 @@
                 </div>
                 <p id="progressText"></p>
             </div>
-            
+
             <!-- Route Statistics -->
             <div class="stats-section" id="statsSection" style="display: none;">
                 <div class="stats-header">
@@ -69,7 +71,7 @@
             <div class="results-section" id="resultsSection" style="display: none;">
                 <div id="downloadButtons"></div>
             </div>
-            
+
             <!-- Controls Section -->
             <div class="controls-panel" id="controlsPanel" style="display: none;">
                 <div class="action-buttons">
@@ -77,7 +79,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Right Panel - Map -->
         <div class="right-panel">
             <div class="map-container">
@@ -95,4 +97,5 @@
     <script src="https://unpkg.com/maplibre-gl@4.0.0/dist/maplibre-gl.js"></script>
     <script type="module" src="main.js"></script>
 </body>
+
 </html>

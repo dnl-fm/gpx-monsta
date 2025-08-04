@@ -485,12 +485,22 @@ class GPXMonsterApp {
         
         // Create download buttons
         this.downloadButtons.innerHTML = '';
-        outputs.forEach(output => {
+        outputs.forEach((output, index) => {
             const button = document.createElement('a');
             button.className = 'download-btn';
             button.textContent = `Download`;
             button.href = this.createDownloadUrl(output.content);
-            button.download = output.name;
+            
+            // Generate timestamp on click to ensure uniqueness
+            button.addEventListener('click', (e) => {
+                const timestamp = Math.floor(Date.now() / 1000);
+                button.download = `gpxmonster-com-track-${timestamp}.gpx`;
+            });
+            
+            // Set initial filename (will be updated on click)
+            const initialTimestamp = Math.floor(Date.now() / 1000) + index;
+            button.download = `gpxmonster-com-track-${initialTimestamp}.gpx`;
+            
             this.downloadButtons.appendChild(button);
         });
         

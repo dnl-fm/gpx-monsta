@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1" creator="GPX Monster Test">
+ <trk>
+  <name>Test Day 2</name>
+  <trkseg>
+   <trkpt lat="46.7120000" lon="11.6600000">
+    <ele>570.0</ele>
+    <time>2024-08-02T09:00:00Z</time>
+   </trkpt>
+   <trkpt lat="46.7125000" lon="11.6605000">
+    <ele>575.0</ele>
+    <time>2024-08-02T09:15:00Z</time>
+   </trkpt>
+  </trkseg>
+ </trk>
+</gpx>

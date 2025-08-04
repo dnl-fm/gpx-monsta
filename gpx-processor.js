@@ -344,13 +344,12 @@ ${trackPoints}
 
         if (mode === 'normalize') {
           // Output individual normalized file
-          const normalizedOutput = file.name.replace('.gpx', '_normalized.gpx');
           const normalizedGPX = this.generateSingleTrackGPX(points, file.name);
           outputs.push({
-            name: normalizedOutput,
+            name: `normalized_${file.name}`, // Temporary name, will be overridden in UI
             content: normalizedGPX
           });
-          this.log(`  Normalized file prepared: ${normalizedOutput}`);
+          this.log(`  Normalized file prepared for: ${file.name}`);
         } else {
           // Add file index and point index for sorting fallback
           const pointsWithIndex = points.map((point, pointIndex) => ({
@@ -405,11 +404,11 @@ ${trackPoints}
 
       const mergedGPX = this.generateGPX(allPoints, allHaveTimestamps);
       outputs.push({
-        name: 'merged.gpx',
+        name: 'merged.gpx', // Temporary name, will be overridden in UI
         content: mergedGPX
       });
       
-      this.log(`\nMerged GPX prepared: merged.gpx`);
+      this.log(`\nMerged GPX prepared`);
     } else {
       this.log(`\nNormalized ${filesToProcess.length} files individually`);
     }
