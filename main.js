@@ -13,6 +13,7 @@ class GPXMonsterApp {
         this.initializeProcessor();
         this.initializeMap();
         this.loadUnitPreference();
+        this.initializePostHog();
     }
 
     initializeElements() {
@@ -130,6 +131,22 @@ class GPXMonsterApp {
         return new Intl.NumberFormat().format(number);
     }
 
+    // PostHog Analytics initialization
+    initializePostHog() {
+        // Check if PostHog is available
+        if (typeof posthog !== 'undefined' && posthog) {
+            // Track initial page view (handled automatically by PostHog)
+            posthog.capture('gpx_monster_app_loaded');
+        }
+    }
+
+    // Analytics tracking methods
+    trackEvent(eventName, properties = {}) {
+        if (typeof posthog !== 'undefined' && posthog) {
+            posthog.capture(eventName, properties);
+        }
+    }
+
     // localStorage functions
     loadUnitPreference() {
         const saved = localStorage.getItem('gpx-monster-units');
@@ -209,6 +226,11 @@ class GPXMonsterApp {
         this.isImperial = this.unitToggle.checked;
         this.saveUnitPreference();
         
+        // Track unit preference change
+        this.trackEvent('unit_preference_changed', {
+            unit_system: this.isImperial ? 'imperial' : 'metric'
+        });
+        
         // Update displayed stats if they exist
         if (this.currentStats) {
             this.showStats(this.currentStats);
@@ -242,8 +264,15 @@ class GPXMonsterApp {
         
         if (files.length === 0) {
             alert('Please select GPX files only.');
+            this.trackEvent('file_upload_failed', { reason: 'no_gpx_files' });
             return;
         }
+
+        // Track file upload event
+        this.trackEvent('files_uploaded', { 
+            file_count: files.length,
+            total_files: this.files.length + files.length
+        });
 
         // Add new files, avoid duplicates
         files.forEach(file => {
@@ -383,12 +412,16 @@ class GPXMonsterApp {
     }
 
     clearFiles() {
+        const fileCount = this.files.length;
         this.files = [];
         this.fileInput.value = '';
         this.updateFileList();
         this.hideResults();
         this.clearMapLayers();
         this.mapOverlay.style.display = 'flex';
+        
+        // Track clear action
+        this.trackEvent('files_cleared', { file_count: fileCount });
     }
 
     handleDragOver(e) {
@@ -412,6 +445,12 @@ class GPXMonsterApp {
         this.showProgress();
         this.hideResults();
 
+        // Track processing start
+        this.trackEvent('gpx_processing_started', { 
+            file_count: this.files.length,
+            mode: 'merge'
+        });
+
         try {
             const { results, outputs, coordinates, stats, sortingInfo, fileOrder, fileTimestampInfo } = await this.processor.processFiles(
                 this.files,
@@ -425,9 +464,23 @@ class GPXMonsterApp {
             this.hideProgress();
             this.showResults(results, outputs, coordinates, stats, sortingInfo, fileOrder, fileTimestampInfo);
 
+            // Track successful processing
+            this.trackEvent('gpx_processing_completed', {
+                file_count: this.files.length,
+                total_distance: stats?.totalDistance,
+                elevation_gain: stats?.elevationGain,
+                has_timestamps: sortingInfo?.type === 'chronological'
+            });
+
         } catch (error) {
             this.hideProgress();
             alert(`Processing failed: ${error.message}`);
+            
+            // Track processing error
+            this.trackEvent('gpx_processing_failed', {
+                file_count: this.files.length,
+                error_message: error.message
+            });
         }
     }
 
@@ -493,6 +546,13 @@ class GPXMonsterApp {
             button.addEventListener('click', (e) => {
                 const timestamp = Math.floor(Date.now() / 1000);
                 button.download = `gpxmonster-com-track-${timestamp}.gpx`;
+                
+                // Track download event
+                this.trackEvent('gpx_file_downloaded', {
+                    file_count: this.files.length,
+                    total_distance: this.currentStats?.totalDistance,
+                    is_imperial_units: this.isImperial
+                });
             });
             
             // Set initial filename (will be updated on click)
