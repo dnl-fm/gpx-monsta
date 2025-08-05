@@ -11,9 +11,13 @@ class GPXMonsterApp {
         this.initializeElements();
         this.setupEventListeners();
         this.initializeProcessor();
-        this.initializeMap();
         this.loadUnitPreference();
         this.initializePostHog();
+        this.mapLibraryLoaded = false;
+        this.mapInitialized = false;
+        
+        // Show overlay initially since map is not loaded yet
+        this.mapOverlay.style.display = 'flex';
     }
 
     initializeElements() {
@@ -68,39 +72,73 @@ class GPXMonsterApp {
         });
     }
 
-    initializeMap() {
-        // Initialize MapLibre GL map with a simplified version of MapTiler Basic style
-        this.map = new maplibregl.Map({
-            container: 'map',
-            style: {
-                version: 8,
-                name: "Basic",
-                sources: {
-                    "osm": {
-                        type: "raster",
-                        tiles: [
-                            "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                            "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                            "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                        ],
-                        tileSize: 256,
-                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    }
-                },
-                layers: [
-                    {
-                        id: "osm",
-                        type: "raster",
-                        source: "osm"
-                    }
-                ]
-            },
-            center: [11.5, 46.5], // Center on Dolomites region [lng, lat]
-            zoom: 8
+    async loadMapLibrary() {
+        if (this.mapLibraryLoaded) return Promise.resolve();
+        
+        return new Promise((resolve, reject) => {
+            // Load CSS first
+            const cssLink = document.createElement('link');
+            cssLink.rel = 'stylesheet';
+            cssLink.href = 'https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.css';
+            document.head.appendChild(cssLink);
+            
+            // Load JavaScript
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.js';
+            script.onload = () => {
+                this.mapLibraryLoaded = true;
+                resolve();
+            };
+            script.onerror = reject;
+            document.head.appendChild(script);
         });
+    }
 
-        // Show overlay initially
-        this.mapOverlay.style.display = 'flex';
+    async initializeMap() {
+        if (this.mapInitialized) return;
+        
+        try {
+            await this.loadMapLibrary();
+            
+            // Initialize MapLibre GL map with a simplified version of MapTiler Basic style
+            this.map = new maplibregl.Map({
+                container: 'map',
+                style: {
+                    version: 8,
+                    name: "Basic",
+                    sources: {
+                        "osm": {
+                            type: "raster",
+                            tiles: [
+                                "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                                "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                                "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            ],
+                            tileSize: 256,
+                            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        }
+                    },
+                    layers: [
+                        {
+                            id: "osm",
+                            type: "raster",
+                            source: "osm"
+                        }
+                    ]
+                },
+                center: [11.5, 46.5], // Center on Dolomites region [lng, lat]
+                zoom: 8
+            });
+            
+            this.mapInitialized = true;
+            
+            // Track map initialization
+            this.trackEvent('map_initialized');
+            
+        } catch (error) {
+            console.error('Failed to load map library:', error);
+            this.trackEvent('map_initialization_failed', { error: error.message });
+        }
     }
 
     // Unit conversion functions
@@ -273,6 +311,11 @@ class GPXMonsterApp {
             file_count: files.length,
             total_files: this.files.length + files.length
         });
+
+        // Initialize map on first file upload
+        if (!this.mapInitialized) {
+            this.initializeMap();
+        }
 
         // Add new files, avoid duplicates
         files.forEach(file => {
@@ -462,7 +505,7 @@ class GPXMonsterApp {
             );
 
             this.hideProgress();
-            this.showResults(results, outputs, coordinates, stats, sortingInfo, fileOrder, fileTimestampInfo);
+            await this.showResults(results, outputs, coordinates, stats, sortingInfo, fileOrder, fileTimestampInfo);
 
             // Track successful processing
             this.trackEvent('gpx_processing_completed', {
@@ -501,7 +544,7 @@ class GPXMonsterApp {
         }
     }
 
-    showResults(_results, outputs, coordinates = [], stats = null, sortingInfo = null, fileOrder = null, fileTimestampInfo = null) {
+    async showResults(_results, outputs, coordinates = [], stats = null, sortingInfo = null, fileOrder = null, fileTimestampInfo = null) {
         // Reorder files if chronological sorting was used
         if (sortingInfo && sortingInfo.type === 'chronological' && fileOrder && fileOrder.length > 0) {
             const originalFiles = [...this.files];
@@ -566,7 +609,7 @@ class GPXMonsterApp {
 
         // Show map with route
         if (coordinates && coordinates.length > 0) {
-            this.showMap(coordinates);
+            await this.showMap(coordinates);
         }
     }
 
@@ -593,7 +636,12 @@ class GPXMonsterApp {
         this.statsSection.style.display = 'block';
     }
 
-    showMap(coordinates) {
+    async showMap(coordinates) {
+        // Ensure map is initialized before showing
+        if (!this.mapInitialized) {
+            await this.initializeMap();
+        }
+        
         // Hide the overlay
         this.mapOverlay.style.display = 'none';
         
