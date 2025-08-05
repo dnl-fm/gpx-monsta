@@ -35,7 +35,8 @@
       "index.html",
       "main.js",
       "gpx-processor.js", 
-      "styles.css"
+      "styles.css",
+      "assets/"
     ],
     "exclude": [
       "data/",

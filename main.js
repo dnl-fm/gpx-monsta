@@ -79,12 +79,12 @@ class GPXMonsterApp {
             // Load CSS first
             const cssLink = document.createElement('link');
             cssLink.rel = 'stylesheet';
-            cssLink.href = 'https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.css';
+            cssLink.href = './assets/maplibre-gl-5.6.1.css';
             document.head.appendChild(cssLink);
             
             // Load JavaScript
             const script = document.createElement('script');
-            script.src = 'https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.js';
+            script.src = './assets/maplibre-gl-5.6.1.js';
             script.onload = () => {
                 this.mapLibraryLoaded = true;
                 resolve();

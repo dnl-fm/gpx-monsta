@@ -4,7 +4,9 @@ const STATIC_FILES = [
   "index.html",
   "main.js", 
   "gpx-processor.js",
-  "styles.css"
+  "styles.css",
+  "assets/maplibre-gl-5.6.1.js",
+  "assets/maplibre-gl-5.6.1.css"
 ];
 
 function getMimeType(filePath: string): string {
@@ -42,7 +44,37 @@ async function handler(req: Request): Promise<Response> {
   }
   
   try {
-    // Use serveDir for actual file serving
+    // Check if client accepts gzip and we have a compressed version for MapLibre files
+    const acceptsGzip = req.headers.get('Accept-Encoding')?.includes('gzip');
+    let actualFilePath = filePath;
+    let isCompressed = false;
+    
+    if (acceptsGzip && (filePath === 'assets/maplibre-gl-5.6.1.js' || filePath === 'assets/maplibre-gl-5.6.1.css')) {
+      const compressedPath = `${filePath}.gz`;
+      try {
+        await Deno.stat(compressedPath);
+        actualFilePath = compressedPath;
+        isCompressed = true;
+      } catch {
+        // Compressed file doesn't exist, use original
+      }
+    }
+    
+    // Read file directly for MapLibre files to handle compression
+    if (filePath === 'assets/maplibre-gl-5.6.1.js' || filePath === 'assets/maplibre-gl-5.6.1.css') {
+      const fileContent = await Deno.readFile(actualFilePath);
+      const headers = new Headers();
+      headers.set('Content-Type', getMimeType(filePath));
+      headers.set('Cache-Control', 'public, max-age=31536000'); // 1 year for static assets
+      
+      if (isCompressed) {
+        headers.set('Content-Encoding', 'gzip');
+      }
+      
+      return new Response(fileContent, { headers });
+    }
+    
+    // Use serveDir for other files
     const response = await serveDir(req, {
       fsRoot: ".",
       urlRoot: "",
