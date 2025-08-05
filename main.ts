@@ -55,6 +55,9 @@ async function handler(req: Request): Promise<Response> {
   
   // Security: Only serve allowed static files
   if (!STATIC_FILES.includes(filePath)) {
+    // Log potential probe attempts
+    console.log(`404: ${pathname} from ${req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown'}`);
+    
     // Serve custom 404 page for all unknown paths
     try {
       const notFoundContent = await Deno.readFile('404.html');
