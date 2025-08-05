@@ -1,0 +1,25 @@
+User-agent: *
+Allow: /
+Disallow: /data/
+Disallow: /tests/
+
+# Prevent crawling of common spam paths
+Disallow: /Pictures/
+Disallow: /home/
+Disallow: /usr/
+Disallow: /var/
+Disallow: /tmp/
+Disallow: /etc/
+Disallow: /wp-admin/
+Disallow: /wp-content/
+Disallow: /admin/
+Disallow: /phpmyadmin/
+Disallow: /*.php$
+Disallow: /*.asp$
+Disallow: /*.aspx$
+
+# Allow important files
+Allow: /robots.txt
+Allow: /sitemap.xml
+
+Sitemap: https://gpx-monster.deno.dev/sitemap.xml

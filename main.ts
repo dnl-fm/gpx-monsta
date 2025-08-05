@@ -6,7 +6,12 @@ const STATIC_FILES = [
   "gpx-processor.js",
   "styles.css",
   "assets/maplibre-gl-5.6.1.js",
-  "assets/maplibre-gl-5.6.1.css"
+  "assets/maplibre-gl-5.6.1.css",
+  "404.html",
+  "robots.txt",
+  "sitemap.xml",
+  "favicon.svg",
+  "favicon.ico"
 ];
 
 function getMimeType(filePath: string): string {
@@ -17,6 +22,9 @@ function getMimeType(filePath: string): string {
     case 'css': return 'text/css; charset=utf-8';
     case 'json': return 'application/json';
     case 'ico': return 'image/x-icon';
+    case 'txt': return 'text/plain; charset=utf-8';
+    case 'xml': return 'application/xml; charset=utf-8';
+    case 'svg': return 'image/svg+xml';
     default: return 'text/plain; charset=utf-8';
   }
 }
@@ -30,15 +38,31 @@ async function handler(req: Request): Promise<Response> {
     pathname = '/index.html';
   }
   
+  // Handle favicon.ico requests by serving the SVG
+  if (pathname === '/favicon.ico') {
+    try {
+      const svgContent = await Deno.readFile('favicon.svg');
+      return new Response(svgContent, {
+        headers: { 'Content-Type': 'image/svg+xml' }
+      });
+    } catch {
+      return new Response('Not Found', { status: 404 });
+    }
+  }
+  
   // Remove leading slash
   const filePath = pathname.slice(1);
   
   // Security: Only serve allowed static files
   if (!STATIC_FILES.includes(filePath)) {
-    // For SPA routing, serve index.html for unknown paths
-    if (!filePath.includes('.')) {
-      pathname = '/index.html';
-    } else {
+    // Serve custom 404 page for all unknown paths
+    try {
+      const notFoundContent = await Deno.readFile('404.html');
+      return new Response(notFoundContent, { 
+        status: 404,
+        headers: { 'Content-Type': 'text/html; charset=utf-8' }
+      });
+    } catch {
       return new Response('Not Found', { status: 404 });
     }
   }
