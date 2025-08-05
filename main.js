@@ -130,6 +130,15 @@ class GPXMonsterApp {
                 zoom: 8
             });
             
+            // Wait for map style to load before marking as initialized
+            await new Promise((resolve) => {
+                if (this.map.isStyleLoaded()) {
+                    resolve();
+                } else {
+                    this.map.on('style.load', resolve);
+                }
+            });
+            
             this.mapInitialized = true;
             
             // Track map initialization
